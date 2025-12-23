@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classe Map - Gestion Plan de Classe - Technologie</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    
+
+    <div class="main-layout">
+        <aside class="left-panel">
+            <header>
+                <h1>Classe Map</h1>
+            </header>
+            
+            <div class="tabs-container">
+                <button id="btn-tab-classes" class="tab-btn active">Gestion Classes</button>
+                <button id="btn-tab-template" class="tab-btn">Salle</button>
+                <button id="btn-tab-data" class="tab-btn">Données</button>
+            </div>
+
+            <div id="controls-classes" class="controls">
+                <div class="control-group">
+                    <label>Classe :</label>
+                    <div style="display:flex; gap:5px;">
+                        <select id="classSelect" style="flex:1;"></select>
+                        <button id="btnAddClass" title="Ajouter">+</button>
+                        <button id="btnDeleteClass" title="Supprimer">-</button>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label for="csvInput">Importer Liste (CSV):</label>
+                    <input type="file" id="csvInput" accept=".csv">
+                    <small>Format: Nom,Prénom</small>
+                </div>
+                <div class="control-group">
+                    <label for="templateSelect">Choisir un modèle :</label>
+                    <select id="templateSelect">
+                        <option value="">-- Vide --</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="controls-template" class="controls hidden">
+                <div class="control-group">
+                    <label for="templateSelectEdit">Éditer un modèle :</label>
+                    <div style="display:flex; gap:5px;">
+                        <select id="templateSelectEdit" style="flex:1;">
+                            <option value="">-- Nouveau / Vide --</option>
+                        </select>
+                        <button id="btnDeleteTemplate" title="Supprimer le modèle">🗑️</button>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label for="roomWidth">Largeur Salle (mm):</label>
+                    <input type="number" id="roomWidth" value="7000">
+                </div>
+                <div class="control-group">
+                    <label for="roomHeight">Profondeur Salle (mm):</label>
+                    <input type="number" id="roomHeight" value="8000">
+                </div>
+                <div class="control-group">
+                    <label>Couleur du sol :</label>
+                    <input type="color" id="floorColor" value="#f5e6aa">
+                </div>
+                <div class="control-group">
+                    <label>Ajouter :</label>
+                    <div style="display:flex; gap:5px; flex-wrap:wrap;">
+                        <button id="btnAddTable" title="Table Rectangulaire">Rect.</button>
+                        <button id="btnAddRoundTable" title="Table Ronde">Ronde</button>
+                        <button id="btnAddComputer" title="Ordinateur">Ordi</button>
+                        <button id="btnAddSeparator" title="Séparateur">Mur</button>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label>Dimensions (mm) :</label>
+                    <div style="display:flex; gap:5px;">
+                        <input type="number" id="tableWidth" value="1400" style="width: 80px;" title="Largeur">
+                        <input type="number" id="tableHeight" value="700" style="width: 80px;" title="Profondeur">
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label>Apparence :</label>
+                    <div style="display:flex; gap:5px; align-items: center;">
+                        <input type="color" id="itemColor" value="#c3aa64" title="Couleur de l'objet">
+                        <button id="btnRotateTable">Pivoter (45°)</button>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label>Métadonnées :</label>
+                    <div style="display:flex; gap:5px; margin-bottom:5px;">
+                        <input type="text" id="metaKey" placeholder="Nom propriété" style="flex:1;">
+                        <input type="text" id="metaValue" placeholder="Valeur" style="flex:1;">
+                    </div>
+                    <div style="display:flex; gap:5px; align-items: center;">
+                        <input type="checkbox" id="metaDisplay"> <label for="metaDisplay">Afficher</label>
+                        <select id="metaMode" style="margin-left:auto;">
+                            <option value="always">Toujours</option>
+                            <option value="hover">Au survol</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <input type="text" id="newTemplateName" placeholder="Nom du modèle">
+                    <button id="btnSaveTemplate">Sauvegarder Modèle</button>
+                </div>
+                <div class="control-group">
+                    <button id="btnClearTemplate">Tout effacer</button>
+                </div>
+            </div>
+
+            <div id="controls-data" class="controls hidden">
+                <h3>Gestion des Données</h3>
+                <p>Sauvegarde complète (Modèles + Classes)</p>
+                <button id="btnExportData">Exporter Tout (JSON)</button>
+                <div id="dropZone" class="drop-zone">Importer JSON (Glisser ici)</div>
+            </div>
+
+            <div id="student-list" class="sidebar">
+                <h3 id="toggle-student-list">Élèves à placer <span>▼</span></h3>
+                <div style="display:flex; gap:5px; margin-bottom: 10px;">
+                    <button id="btnAddGroup" style="flex:1;" title="Ajouter un groupe">+ Grp</button>
+                    <button id="btnAutoGroup" style="flex:1;" title="Génération auto (3-4 élèves)">Auto</button>
+                    <button id="btnResetGroups" style="flex:1;" title="Tout dans Master">Reset</button>
+                </div>
+                <div id="students-container"></div>
+            </div>
+        </aside>
+
+        <main class="center-panel">
+            <div class="room-toolbar">
+                <div class="toolbar-controls">
+                    <button id="btnPanTool" class="tool-btn" title="Outil Déplacement (Pan)">✋</button>
+                    <button id="btnToggleInfo" class="tool-btn active" title="Afficher/Masquer Infos">ℹ️</button>
+                    <div class="zoom-controls-vertical">
+                        <button id="btnZoomIn" title="Zoomer" class="tool-btn" style="font-size:1rem;">+</button>
+                    <span id="zoomLevelDisplay">100%</span>
+                        <button id="btnZoomOut" title="Dézoomer" class="tool-btn" style="font-size:1rem;">-</button>
+                    </div>
+                </div>
+            </div>
+            <div id="room-container" class="room-area">
+            <svg id="roomSvg" width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <pattern id="grid" width="500" height="500" patternUnits="userSpaceOnUse">
+                        <path d="M 500 0 L 0 0 0 500" fill="none" stroke="#e0e0e0" stroke-width="10"/>
+                    </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#grid)" stroke="#333" stroke-width="20" />
+            </svg>
+        </div>
+        <h3 id="roomTitle">Plan</h3>
+    </main>
+    </div>
+
+    <div id="infoPanel" class="info-panel">
+        <h4>Informations</h4>
+        <div class="info-content">
+            <p><strong>Salle :</strong> <span id="infoRoomName">-</span></p>
+            <p><strong>Classe :</strong> <span id="infoClassName">-</span></p>
+            <p><strong>Groupes :</strong> <span id="infoGroupCount">0</span></p>
+            <p><strong>Élèves :</strong> <span id="infoStudentCount">0</span></p>
+            <div id="infoStudentHover" class="student-hover-info"></div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const infoPanel = {
+                room: document.getElementById('infoRoomName'),
+                class: document.getElementById('infoClassName'),
+                groups: document.getElementById('infoGroupCount'),
+                students: document.getElementById('infoStudentCount'),
+                hover: document.getElementById('infoStudentHover')
+            };
+
+            function updateStats() {
+                const roomTitle = document.getElementById('roomTitle');
+                infoPanel.room.textContent = roomTitle ? roomTitle.textContent : 'Plan';
+                
+                const classSelect = document.getElementById('classSelect');
+                if (classSelect && classSelect.options.length > 0 && classSelect.selectedIndex >= 0) {
+                    infoPanel.class.textContent = classSelect.options[classSelect.selectedIndex].text;
+                } else {
+                    infoPanel.class.textContent = 'Aucune';
+                }
+
+                infoPanel.groups.textContent = document.querySelectorAll('.svg-group').length;
+                infoPanel.students.textContent = document.querySelectorAll('.svg-student').length;
+            }
+
+            setInterval(updateStats, 1000);
+
+            const roomSvg = document.getElementById('roomSvg');
+            if (roomSvg) {
+                roomSvg.addEventListener('mouseover', (e) => {
+                    const studentGroup = e.target.closest('.svg-student');
+                    if (studentGroup) {
+                        const nom = studentGroup.dataset.nom || '';
+                        const prenom = studentGroup.dataset.prenom || '';
+                        infoPanel.hover.textContent = `${prenom} ${nom}`;
+                        infoPanel.hover.style.visibility = 'visible';
+                    }
+                });
+                roomSvg.addEventListener('mouseout', (e) => {
+                     const studentGroup = e.target.closest('.svg-student');
+                     if (studentGroup) {
+                         infoPanel.hover.style.visibility = 'hidden';
+                     }
+                });
+            }
+
+            const tabs = document.querySelectorAll('.tab-btn');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    setTimeout(() => {
+                        window.dispatchEvent(new Event('resize'));
+                        updateStats();
+                    }, 100);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
