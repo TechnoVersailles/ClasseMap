@@ -120,17 +120,17 @@ header {
 }
 
 /* Couleurs spécifiques pour les actions */
-#btnDeleteClass, #btnDeleteTemplate, #btnClearTemplate, #btnResetGroups {
+#btnDeleteClass, #btnDeleteTemplate, #btnClearTemplate, #btnResetGroups, #btnResetAll {
     background-color: #e74c3c;
 }
-#btnDeleteClass:hover, #btnDeleteTemplate:hover, #btnClearTemplate:hover, #btnResetGroups:hover {
+#btnDeleteClass:hover, #btnDeleteTemplate:hover, #btnClearTemplate:hover, #btnResetGroups:hover, #btnResetAll:hover {
     background-color: #c0392b;
 }
 
-#btnAddClass, #btnSaveTemplate, #btnExportData, #btnAddGroup {
+#btnAddClass, #btnSaveTemplate, #btnExportData, #btnAddGroup, #btnLoadDemo {
     background-color: #2ecc71;
 }
-#btnAddClass:hover, #btnSaveTemplate:hover, #btnExportData:hover, #btnAddGroup:hover {
+#btnAddClass:hover, #btnSaveTemplate:hover, #btnExportData:hover, #btnAddGroup:hover, #btnLoadDemo:hover {
     background-color: #27ae60;
 }
 
@@ -376,6 +376,31 @@ header {
     font-size: 300px;
     transform: translateY(-30px); /* Remonte légèrement */
     
+}
+
+/* Masquer globalement les groupes (et leur contenu) */
+#roomSvg.hide-all-groups .svg-group {
+    display: none;
+}
+
+/* Masquer les étiquettes des groupes */
+#roomSvg.hide-groups .group-title {
+    display: none;
+}
+
+/* Masquer les élèves complets */
+#roomSvg.hide-students .svg-student {
+    display: none;
+}
+
+/* Masquer les icônes des élèves */
+#roomSvg.hide-icons .svg-student svg {
+    display: none;
+}
+
+/* Masquer les noms des élèves */
+#roomSvg.hide-names .svg-student text {
+    display: none;
 }
 
 /* Styles spécifiques pour les types d'objets */

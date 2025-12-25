@@ -28,6 +28,8 @@ Créez des configurations de salle réutilisables :
     *   **Visualisation :** Les groupes sur le plan sont entourés d'une forme colorée.
     *   **Formes dynamiques :** Double-cliquez sur un groupe sur le plan pour changer sa forme (Rectangle, Carré, Cercle).
     *   **Déplacement groupé :** Déplacez tous les élèves d'un groupe en une seule fois.
+    *   **Génération Auto :** Répartissez aléatoirement les élèves en groupes de 3-4 via le bouton "Auto".
+    *   **Reset Groupes :** Le bouton "Reset" replace tous les élèves dans le groupe principal "Master".
 
 ### 4. Navigation et Visualisation
 *   **Zoom et Panoramique :** Zoomez pour voir les détails ou dézoomez pour une vue d'ensemble. Utilisez l'outil "Main" pour vous déplacer dans le plan.
@@ -35,11 +37,20 @@ Créez des configurations de salle réutilisables :
     *   Affiche en temps réel le nom de la salle, de la classe, et les compteurs (groupes/élèves).
     *   Affiche le nom complet de l'élève au survol de la souris.
     *   Peut être masqué via la barre d'outils.
+*   **Barre d'outils d'affichage :** Contrôlez précisément ce qui est visible sur le plan :
+    *   👥 **Groupes (Global) :** Affiche/Masque l'ensemble des groupes et élèves.
+    *   🏷️ **Étiquettes :** Affiche/Masque uniquement les titres des groupes.
+    *   🎓 **Élèves :** Affiche/Masque les élèves (icônes + noms).
+    *   ☺ **Icônes :** Affiche/Masque uniquement les avatars graphiques.
+    *   Aa **Noms :** Affiche/Masque uniquement les prénoms des élèves.
 
 ### 5. Gestion des Données
 *   **Sauvegarde Locale :** Toutes les modifications sont sauvegardées automatiquement dans le navigateur (LocalStorage).
 *   **Export JSON :** Exportez toutes vos données (modèles et classes) dans un fichier JSON pour les sauvegarder ou les transférer.
 *   **Import JSON :** Restaurez vos données via un simple glisser-déposer dans l'onglet "Données".
+*   **Actions Rapides :**
+    *   **Charger Démo :** Génère des modèles (Salle Standard, Salle Info) et des classes exemples (6ème A, 5ème B) pour tester l'application.
+    *   **Réinitialiser Tout :** Efface toutes les données (Modèles et Classes) pour repartir à zéro.
 
 ## Guide d'utilisation rapide
 

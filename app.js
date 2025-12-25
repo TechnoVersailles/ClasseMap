@@ -35,8 +35,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnExportData = document.getElementById('btnExportData');
     const btnPanTool = document.getElementById('btnPanTool');
     const btnToggleInfo = document.getElementById('btnToggleInfo');
+    const btnToggleAllGroups = document.getElementById('btnToggleAllGroups');
+    const btnToggleGroups = document.getElementById('btnToggleGroups');
+    const btnToggleStudents = document.getElementById('btnToggleStudents');
+    const btnToggleIcons = document.getElementById('btnToggleIcons');
+    const btnToggleNames = document.getElementById('btnToggleNames');
     const roomTitle = document.getElementById('roomTitle');
     const dropZone = document.getElementById('dropZone');
+    const btnLoadDemo = document.getElementById('btnLoadDemo');
+    const btnResetAll = document.getElementById('btnResetAll');
     
     // Contrôles Classes
     const classSelect = document.getElementById('classSelect');
@@ -668,13 +675,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
+        // Éviter les doublons visuels sur le plan (si on déplace un élève déjà présent)
+        const existingSvg = roomSvg.querySelector(`.svg-student[data-id="${studentData.id}"]`);
+        if (existingSvg) existingSvg.remove();
+
         createSvgStudent(studentData.nom, studentData.prenom, finalX, finalY, studentData.id, studentData.groupe);
 
-        // Optionnel : Supprimer de la liste latérale si placé
-        const sidebarItem = document.querySelector(`.student-item[data-id="${studentData.id}"]`);
-        if (sidebarItem) {
-            sidebarItem.remove();
-        }
+        // On ne supprime plus l'élément de la sidebar pour qu'il reste visible dans la liste
     });
 
     // --- Création de l'élève SVG ---
@@ -1374,6 +1381,68 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    if (btnToggleAllGroups) {
+        btnToggleAllGroups.addEventListener('click', () => {
+            const isHidden = roomSvg.classList.toggle('hide-all-groups');
+            const isActive = !isHidden;
+            btnToggleAllGroups.classList.toggle('active', isActive);
+
+            // Répercuter sur les étiquettes de groupes
+            roomSvg.classList.toggle('hide-groups', !isActive);
+            if (btnToggleGroups) btnToggleGroups.classList.toggle('active', isActive);
+
+            // Répercuter sur les élèves (Global)
+            roomSvg.classList.toggle('hide-students', !isActive);
+            if (btnToggleStudents) btnToggleStudents.classList.toggle('active', isActive);
+
+            // Répercuter sur les icônes
+            roomSvg.classList.toggle('hide-icons', !isActive);
+            if (btnToggleIcons) btnToggleIcons.classList.toggle('active', isActive);
+
+            // Répercuter sur les noms
+            roomSvg.classList.toggle('hide-names', !isActive);
+            if (btnToggleNames) btnToggleNames.classList.toggle('active', isActive);
+        });
+    }
+
+    if (btnToggleGroups) {
+        btnToggleGroups.addEventListener('click', () => {
+            const isHidden = roomSvg.classList.toggle('hide-groups');
+            btnToggleGroups.classList.toggle('active', !isHidden);
+        });
+    }
+
+    if (btnToggleStudents) {
+        btnToggleStudents.addEventListener('click', () => {
+            // Bascule l'état actif du bouton principal
+            const isActive = btnToggleStudents.classList.contains('active');
+            const newState = !isActive;
+            btnToggleStudents.classList.toggle('active', newState);
+
+            // Synchronise les Icônes
+            roomSvg.classList.toggle('hide-icons', !newState);
+            btnToggleIcons.classList.toggle('active', newState);
+
+            // Synchronise les Noms
+            roomSvg.classList.toggle('hide-names', !newState);
+            btnToggleNames.classList.toggle('active', newState);
+        });
+    }
+
+    if (btnToggleIcons) {
+        btnToggleIcons.addEventListener('click', () => {
+            const isHidden = roomSvg.classList.toggle('hide-icons');
+            btnToggleIcons.classList.toggle('active', !isHidden);
+        });
+    }
+
+    if (btnToggleNames) {
+        btnToggleNames.addEventListener('click', () => {
+            const isHidden = roomSvg.classList.toggle('hide-names');
+            btnToggleNames.classList.toggle('active', !isHidden);
+        });
+    }
+
     window.addEventListener('mouseup', () => {
         if (isPanning) {
             isPanning = false;
@@ -1453,6 +1522,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const groupsList = [];
         const studentsList = [];
+        const placedIds = new Set();
 
         // Sauvegarder les groupes
         roomSvg.querySelectorAll('.svg-group').forEach(g => {
@@ -1482,18 +1552,9 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // Élèves dans la sidebar
-        document.querySelectorAll('.student-item').forEach(el => {
-            studentsList.push({
-                id: el.dataset.id,
-                nom: el.dataset.nom,
-                prenom: el.dataset.prenom,
-                groupe: el.dataset.groupe || "",
-                status: 'sidebar'
-            });
-        });
-        // Élèves placés
+        // 1. Élèves placés (Prioritaires)
         roomSvg.querySelectorAll('.svg-student').forEach(el => {
+            placedIds.add(el.dataset.id);
             const transform = el.transform.baseVal.getItem(0);
             const parent = el.parentNode;
             const isInGroup = parent.classList.contains('svg-group');
@@ -1508,6 +1569,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 y: transform.matrix.f + 200,
                 parentGroupId: isInGroup ? parent.dataset.groupId : null
             });
+        });
+
+        // 2. Élèves dans la sidebar (Seulement ceux qui ne sont PAS placés)
+        document.querySelectorAll('.student-item').forEach(el => {
+            if (!placedIds.has(el.dataset.id)) {
+                studentsList.push({
+                    id: el.dataset.id,
+                    nom: el.dataset.nom,
+                    prenom: el.dataset.prenom,
+                    groupe: el.dataset.groupe || "",
+                    status: 'sidebar'
+                });
+            }
         });
 
         classes[currentClass] = {
@@ -1562,14 +1636,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Regrouper les élèves de la sidebar pour l'affichage
         const sidebarStudentsByGroup = {};
+
+        // Initialiser avec les groupes placés pour qu'ils apparaissent dans la sidebar
+        if (data.groups) {
+            data.groups.forEach(g => {
+                if (!sidebarStudentsByGroup[g.metaValue]) sidebarStudentsByGroup[g.metaValue] = [];
+            });
+        }
         
         if (data.students) {
             data.students.forEach(s => {
-                if (s.status === 'sidebar') {
-                    const g = s.groupe || "Sans Groupe";
-                    if (!sidebarStudentsByGroup[g]) sidebarStudentsByGroup[g] = [];
-                    sidebarStudentsByGroup[g].push(s);
-                } else if (s.status === 'placed') {
+                // Toujours ajouter à la liste latérale (sidebar)
+                const g = s.groupe || "Sans Groupe";
+                if (!sidebarStudentsByGroup[g]) sidebarStudentsByGroup[g] = [];
+                sidebarStudentsByGroup[g].push(s);
+
+                // Si placé, ajouter AUSSI sur le plan
+                if (s.status === 'placed') {
                     const container = s.parentGroupId ? groupElements[s.parentGroupId] : roomSvg;
                     if (container) {
                         createSvgStudent(s.nom, s.prenom, s.x, s.y, s.id, s.groupe, container);
@@ -1663,4 +1746,199 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         reader.readAsText(file);
     });
+
+    // --- Fonctions Reset et Démo ---
+
+    if (btnResetAll) {
+        btnResetAll.addEventListener('click', () => {
+            if (confirm("ATTENTION : Vous allez effacer TOUTES les données (Modèles et Classes). Cette action est irréversible.\n\nVoulez-vous continuer ?")) {
+                localStorage.clear();
+                location.reload();
+            }
+        });
+    }
+
+    if (btnLoadDemo) {
+        btnLoadDemo.addEventListener('click', () => {
+            createDemoData();
+        });
+    }
+
+    function createDemoData() {
+        const demoTemplateName = "Salle Standard (Démo)";
+
+        // 1. Créer ou mettre à jour le modèle de salle (8 Ilots pour 30 élèves)
+        templates[demoTemplateName] = {
+            roomWidth: 8000,
+            roomHeight: 7000,
+            floorColor: "#f5e6aa",
+            objects: [
+                { type: 'rect', x: 3500, y: 500, w: 1600, h: 800, r: 0, color: '#e67e22', metaValue: "Bureau Prof", metaDisplay: true },
+                { type: 'rect', x: 1000, y: 2000, w: 1400, h: 700, r: 0, color: '#c3aa64', metaValue: "Ilot 1", metaDisplay: true },
+                { type: 'rect', x: 3500, y: 2000, w: 1400, h: 700, r: 0, color: '#c3aa64', metaValue: "Ilot 2", metaDisplay: true },
+                { type: 'rect', x: 6000, y: 2000, w: 1400, h: 700, r: 0, color: '#c3aa64', metaValue: "Ilot 3", metaDisplay: true },
+                { type: 'rect', x: 1000, y: 4000, w: 1400, h: 700, r: 0, color: '#c3aa64', metaValue: "Ilot 4", metaDisplay: true },
+                { type: 'rect', x: 3500, y: 4000, w: 1400, h: 700, r: 0, color: '#c3aa64', metaValue: "Ilot 5", metaDisplay: true },
+                { type: 'rect', x: 6000, y: 4000, w: 1400, h: 700, r: 0, color: '#c3aa64', metaValue: "Ilot 6", metaDisplay: true },
+                { type: 'rect', x: 1000, y: 5500, w: 1400, h: 700, r: 0, color: '#c3aa64', metaValue: "Ilot 7", metaDisplay: true },
+                { type: 'rect', x: 3500, y: 5500, w: 1400, h: 700, r: 0, color: '#c3aa64', metaValue: "Ilot 8", metaDisplay: true }
+            ]
+        };
+
+        // 2. Créer le modèle Salle Info (Ordinateurs sur le contour)
+        const demoInfoTemplateName = "Salle Info (Démo)";
+        templates[demoInfoTemplateName] = {
+            roomWidth: 9000,
+            roomHeight: 7000,
+            floorColor: "#d4e6f1",
+            objects: [
+                { type: 'rect', x: 3700, y: 200, w: 1600, h: 800, r: 0, color: '#e67e22', metaValue: "Bureau Prof", metaDisplay: true },
+                // Mur Gauche (5 Ordis)
+                { type: 'computer', x: 200, y: 1500, w: 800, h: 800, r: 90, color: '#333' },
+                { type: 'computer', x: 200, y: 2400, w: 800, h: 800, r: 90, color: '#333' },
+                { type: 'computer', x: 200, y: 3300, w: 800, h: 800, r: 90, color: '#333' },
+                { type: 'computer', x: 200, y: 4200, w: 800, h: 800, r: 90, color: '#333' },
+                { type: 'computer', x: 200, y: 5100, w: 800, h: 800, r: 90, color: '#333' },
+                // Mur Droit (5 Ordis)
+                { type: 'computer', x: 8000, y: 1500, w: 800, h: 800, r: -90, color: '#333' },
+                { type: 'computer', x: 8000, y: 2400, w: 800, h: 800, r: -90, color: '#333' },
+                { type: 'computer', x: 8000, y: 3300, w: 800, h: 800, r: -90, color: '#333' },
+                { type: 'computer', x: 8000, y: 4200, w: 800, h: 800, r: -90, color: '#333' },
+                { type: 'computer', x: 8000, y: 5100, w: 800, h: 800, r: -90, color: '#333' },
+                // Fond (7 Ordis)
+                { type: 'computer', x: 1400, y: 6000, w: 800, h: 800, r: 0, color: '#333' },
+                { type: 'computer', x: 2300, y: 6000, w: 800, h: 800, r: 0, color: '#333' },
+                { type: 'computer', x: 3200, y: 6000, w: 800, h: 800, r: 0, color: '#333' },
+                { type: 'computer', x: 4100, y: 6000, w: 800, h: 800, r: 0, color: '#333' },
+                { type: 'computer', x: 5000, y: 6000, w: 800, h: 800, r: 0, color: '#333' },
+                { type: 'computer', x: 5900, y: 6000, w: 800, h: 800, r: 0, color: '#333' },
+                { type: 'computer', x: 6800, y: 6000, w: 800, h: 800, r: 0, color: '#333' },
+                // Centre
+                { type: 'rect', x: 2500, y: 2500, w: 1600, h: 1600, r: 0, color: '#c3aa64', metaValue: "Centre 1", metaDisplay: true },
+                { type: 'rect', x: 4900, y: 2500, w: 1600, h: 1600, r: 0, color: '#c3aa64', metaValue: "Centre 2", metaDisplay: true }
+            ]
+        };
+
+        // Helper pour générer des élèves
+        const createStudent = (id, nom, prenom, groupe, status, x, y, parentGroupId) => ({
+            id, nom, prenom, groupe, status, x, y, parentGroupId
+        });
+
+        // Listes de noms pour la génération réaliste
+        const noms = ["Dupont", "Durand", "Martin", "Bernard", "Thomas", "Petit", "Robert", "Richard", "Dubois", "Moreau", "Laurent", "Simon", "Michel", "Lefebvre", "Leroy", "Roux", "David", "Bertrand", "Morel", "Fournier", "Girard", "Bonnet", "Lambert", "Fontaine", "Rousseau", "Vincent", "Muller", "Lefevre", "Faure", "Andre", "Mercier", "Blanc", "Guerin", "Boyer", "Garnier", "Chevalier", "Francois", "Legrand", "Gauthier", "Garcia"];
+        const prenoms = ["Gabriel", "Léo", "Raphaël", "Arthur", "Louis", "Emma", "Jade", "Louise", "Lucas", "Adam", "Maël", "Jules", "Hugo", "Liam", "Alice", "Chloé", "Lina", "Mila", "Rose", "Mia", "Paul", "Tiago", "Ambre", "Sacha", "Noah", "Gaspard", "Eden", "Mohamed", "Léon", "Anna", "Aaron", "Ethan", "Julia", "Romy", "Léonie", "Inès", "Nolan", "Tom", "Timéo", "Sarah"];
+        
+        let nameIdx = 0;
+        const getNextIdentity = () => {
+            const n = noms[nameIdx % noms.length];
+            // Décalage pour varier les combinaisons
+            const p = prenoms[(nameIdx + 7) % prenoms.length]; 
+            nameIdx++;
+            return { nom: n, prenom: p };
+        };
+
+        // Configuration commune des groupes (Ajustement X -500 demandé)
+        const groupNames = ["Ilot 1", "Ilot 2", "Ilot 3", "Ilot 4", "Ilot 5", "Ilot 6", "Ilot 7", "Ilot 8"];
+        const groupPositions = [
+            {x: 400, y: 1900}, {x: 2900, y: 1900}, {x: 5400, y: 1900},
+            {x: 400, y: 3900}, {x: 2900, y: 3900}, {x: 5400, y: 3900},
+            {x: 400, y: 5400}, {x: 2900, y: 5400}
+        ];
+
+        // Classe 2 : 6eme A (30 élèves, Placée sur le plan)
+        // Classe 2 : 6eme A (30 élèves, Groupes sur plan, Élèves dans liste)
+        const class2Name = "6eme A (Démo)";
+        if (!classes[class2Name]) {
+            const students = [];
+            const groups = [];
+
+            let studentId = 1;
+            groupNames.forEach((gName, idx) => {
+                const gId = `g-6a-${idx}`;
+                const pos = groupPositions[idx];
+                groups.push({ id: gId, x: pos.x, y: pos.y, w: 1600, h: 900, shape: "rect", metaValue: gName });
+
+                // 6 groupes de 4 (24) + 2 groupes de 3 (6) = 30
+                const count = (idx < 6) ? 4 : 3;
+                for(let i=0; i<count; i++) {
+                    const ident = getNextIdentity();
+                    students.push(createStudent(`d6a-${studentId}`, ident.nom, ident.prenom, gName, "placed", 0, 0, gId));
+                    studentId++;
+                }
+            });
+            
+            classes[class2Name] = { template: demoTemplateName, roomWidth: 8000, roomHeight: 7000, floorColor: "#e8f8f5", students, groups };
+        }
+
+        // Classe 3 : 5eme B (30 élèves, Complète et Placée)
+        // Classe 3 : 5eme B (30 élèves, Groupes sur plan, Élèves dans liste)
+        const classPlacedName = "5eme B (Démo)";
+        if (!classes[classPlacedName]) {
+             const students = [];
+             const groups = [];
+
+            let studentId = 1;
+            groupNames.forEach((gName, idx) => {
+                const gId = `g-5b-${idx}`;
+                const pos = groupPositions[idx];
+                groups.push({ id: gId, x: pos.x, y: pos.y, w: 1600, h: 900, shape: "rect", metaValue: gName });
+                
+                const count = (idx < 6) ? 4 : 3;
+                for(let i=0; i<count; i++) {
+                    const ident = getNextIdentity();
+                    students.push(createStudent(`d5b-${studentId}`, ident.nom, ident.prenom, gName, "placed", 0, 0, gId));
+                    studentId++;
+                }
+            });
+            classes[classPlacedName] = { template: demoTemplateName, roomWidth: 8000, roomHeight: 7000, floorColor: "#e8f6f3", students, groups };
+        }
+
+        // Classe 4 : 6A_salle_info (Nouvelle salle)
+        const classInfoName = "6A_salle_info";
+        if (!classes[classInfoName]) {
+            const students = [];
+            const groups = [];
+            
+            const infoGroups = [
+                { name: "Mur Gauche", x: 600, y: 3700 },
+                { name: "Mur Droit", x: 7400, y: 3200 },
+                { name: "Fond", x: 3500, y: 5900 },
+                { name: "Centre 1", x: 2300, y: 2800 },
+                { name: "Centre 2", x: 4700, y: 2800 }
+            ];
+
+            infoGroups.forEach((g, idx) => {
+                const gId = `g-info-${idx}`;
+                groups.push({ id: gId, x: g.x, y: g.y, w: 1600, h: 1200, shape: "rect", metaValue: g.name });
+                
+                // 4 élèves par groupe (20 total)
+                for(let i=0; i<4; i++) {
+                     const ident = getNextIdentity();
+                     students.push(createStudent(`d-info-${idx}-${i}`, ident.nom, ident.prenom, g.name, "placed", 0, 0, gId));
+                }
+            });
+
+            classes[classInfoName] = { template: demoInfoTemplateName, roomWidth: 9000, roomHeight: 7000, floorColor: "#d4e6f1", students, groups };
+        }
+
+        // Sauvegarde
+        localStorage.setItem('classroomTemplates', JSON.stringify(templates));
+        localStorage.setItem('classroomClasses', JSON.stringify(classes));
+
+        // Mise à jour UI
+        updateTemplateSelect();
+        updateClassSelect();
+        
+        // Charger la classe de démo principale
+        classSelect.value = class2Name;
+        currentClass = class2Name;
+        loadClass(class2Name);
+        classSelect.value = classInfoName;
+        currentClass = classInfoName;
+        loadClass(classInfoName);
+        switchMode('classes');
+        
+        alert("Données de démonstration chargées (2 classes) !");
+        alert("Données de démonstration chargées (3 classes dont Salle Info) !");
+    }
 });
