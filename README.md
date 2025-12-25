@@ -1,5 +1,7 @@
 # Classe Map
 
+![Aperçu de l'application Classe Map](capt_demo.png)
+
 **Classe Map** est une application web interactive permettant aux enseignants de créer, gérer et visualiser des plans de classe dynamiques. Elle offre des outils pour dessiner la configuration de la salle, importer des listes d'élèves et organiser les placements par groupes ou individuellement.
 
 ## Fonctionnalités Principales
